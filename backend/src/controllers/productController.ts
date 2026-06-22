@@ -77,18 +77,26 @@ export const updateProduct = async (req: Request, res: Response) => {
         const { id } = req.params
         const { title, description, imageUrl } = req.body
 
+        const updates = Object.fromEntries(
+            Object.entries({ title, description, imageUrl }).filter(([, value]) => value !== undefined)
+        )
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ error: "At least one field is required for update" })
+        }
+
         const existingProduct = await queries.getProductById(id as string)
         if (!existingProduct) {
             res.status(404).json({ error: "Product not found" })
             return;
         }
 
+        if (existingProduct.userId !== userId) {
+            return res.status(403).json({ error: "You can only update your own products" })
+        }
 
-        const product = await queries.updateProduct(id as string, {
-            title,
-            description,
-            imageUrl
-        })
+
+
+       const product = await queries.updateProduct(id as string, updates)
         res.status(200).json(product)
     } catch (error) {
         console.error("Error updating product:", error);
