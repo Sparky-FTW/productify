@@ -87,7 +87,7 @@ export const getProductsByUserId = async (userId: string) => {
 type ProductUpdate = Partial<Omit<NewProduct, "id" | "userId" | "createdAt" | "updatedAt">>
 export const updateProduct = async (id: string, data: ProductUpdate) => {
     if (Object.keys(data).length === 0) {
-        throw new Error("No fields provided for user update")
+        throw new Error("No fields provided for product update")
     }
     const [product] = await db.update(products).set(data).where(eq(products.id, id)).returning()
     if (!product) throw new Error(`Product with id ${id} not found`)
