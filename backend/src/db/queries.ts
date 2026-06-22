@@ -1,12 +1,12 @@
 import { db } from "./index.js";
 import { eq } from "drizzle-orm";
-import { 
-    users, 
-    products, 
-    comments, 
-    type NewUser, 
-    type NewProduct, 
-    type NewComment 
+import {
+    users,
+    products,
+    comments,
+    type NewUser,
+    type NewProduct,
+    type NewComment
 } from "./schema.js";
 
 // User queries
@@ -16,21 +16,35 @@ export const createUser = async (data: NewUser) => {
     return user
 }
 
-export const getUserById = async (id:string) => {
-    return db.query.users.findFirst({ where: eq(users.id, id)})
+export const getUserById = async (id: string) => {
+    return db.query.users.findFirst({ where: eq(users.id, id) })
 }
 
-export const updateUser = async (id: string, data: Partial<NewUser>) => {
-    const [user] = await db.update(users).set(data).where(eq(users.id,id)).returning()
+
+type UserUpdate = Partial<Omit<NewUser, "id">>
+export const updateUser = async (id: string, data: UserUpdate) => {
+    const existingUser = await getUserById(id)
+    if (!existingUser) {
+        throw new Error(`User with id ${id} not found`)
+    }
+    const [user] = await db.update(users).set(data).where(eq(users.id, id)).returning()
     return user
 }
 
 
 export const upsertUser = async (data: NewUser) => {
-    const existingUser = await getUserById(data.id)
-    if(existingUser) return updateUser(data.id, data)
-    
-    return createUser(data)
+    // const existingUser = await getUserById(data.id)
+    // if(existingUser) return updateUser(data.id, data)
+
+    //     return createUser(data)
+
+    const [user] = await db.insert(users).values(data).onConflictDoUpdate({
+        target: users.id,
+        set: data
+    }).returning()
+
+    return user
+
 }
 
 
@@ -41,9 +55,9 @@ export const createProduct = async (data: NewProduct) => {
 }
 
 export const getAllProducts = async () => {
-    return db.query.products.findMany({ 
+    return db.query.products.findMany({
         with: { user: true },
-        orderBy: (products, {desc}) => [desc(products.createdAt)]
+        orderBy: (products, { desc }) => [desc(products.createdAt)]
     })
 }
 
@@ -54,7 +68,7 @@ export const getProductById = async (id: string) => {
         with: {
             user: true,
             comments: {
-                with: {user: true},
+                with: { user: true },
                 orderBy: (comments, { desc }) => [desc(comments.createdAt)]
             }
         }
@@ -70,12 +84,21 @@ export const getProductsByUserId = async (userId: string) => {
 }
 
 
-export const updateProduct = async (id: string, data: Partial<NewProduct>) => {
+type ProductUpdate = Partial<Omit<NewProduct, "id" | "userId">>
+export const updateProduct = async (id: string, data: ProductUpdate) => {
+    const existingProduct = await getProductById(id)
+    if (!existingProduct) {
+        throw new Error(`Product with id ${id} not found`)
+    }
     const [product] = await db.update(products).set(data).where(eq(products.id, id)).returning()
     return product
 }
 
 export const deleteProduct = async (id: string) => {
+    const existingProduct = await getProductById(id)
+    if (!existingProduct) {
+        throw new Error(`Product with id ${id} not found`)
+    }
     const [product] = await db.delete(products).where(eq(products.id, id)).returning()
     return product
 }
@@ -90,6 +113,10 @@ export const createComment = async (data: NewComment) => {
 
 
 export const deleteComment = async (id: string) => {
+    const existingComment = await getCommentById(id)
+    if (!existingComment) {
+        throw new Error(`Comment with id ${id} not found`)
+    }
     const [comment] = await db.delete(comments).where(eq(comments.id, id)).returning()
     return comment
 }
@@ -98,6 +125,6 @@ export const deleteComment = async (id: string) => {
 export const getCommentById = async (id: string) => {
     return db.query.comments.findFirst({
         where: eq(comments.id, id),
-        with: { user: true}
+        with: { user: true }
     })
 }
