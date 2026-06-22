@@ -23,8 +23,11 @@ export const getUserById = async (id: string) => {
 
 type UserUpdate = Partial<Omit<NewUser, "id" | "createdAt" | "updatedAt">>
 export const updateUser = async (id: string, data: UserUpdate) => {
+    if (Object.keys(data).length === 0) {
+        throw new Error("No fields provided for user update")
+    }
     const [user] = await db.update(users).set(data).where(eq(users.id, id)).returning()
-    if(!user) throw new Error(`User with id ${id} not found`)
+    if (!user) throw new Error(`User with id ${id} not found`)
     return user
 }
 
@@ -83,14 +86,17 @@ export const getProductsByUserId = async (userId: string) => {
 
 type ProductUpdate = Partial<Omit<NewProduct, "id" | "userId" | "createdAt" | "updatedAt">>
 export const updateProduct = async (id: string, data: ProductUpdate) => {
+    if (Object.keys(data).length === 0) {
+        throw new Error("No fields provided for user update")
+    }
     const [product] = await db.update(products).set(data).where(eq(products.id, id)).returning()
-    if(!product) throw new Error(`Product with id ${id} not found`)
+    if (!product) throw new Error(`Product with id ${id} not found`)
     return product
 }
 
 export const deleteProduct = async (id: string) => {
     const [product] = await db.delete(products).where(eq(products.id, id)).returning()
-    if(!product) throw new Error(`Product with id ${id} not found`)
+    if (!product) throw new Error(`Product with id ${id} not found`)
     return product
 }
 
@@ -105,7 +111,7 @@ export const createComment = async (data: NewComment) => {
 
 export const deleteComment = async (id: string) => {
     const [comment] = await db.delete(comments).where(eq(comments.id, id)).returning()
-    if(!comment) throw new Error(`Comment with id ${id} not found`)
+    if (!comment) throw new Error(`Comment with id ${id} not found`)
     return comment
 }
 
