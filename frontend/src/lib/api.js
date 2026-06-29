@@ -41,3 +41,13 @@ export const deleteProduct = async (id) => {
     return data
 }
 
+// Comments API
+export const createComment = async ({ productId, content }) => {
+  const { data } = await api.post(`/comments/${productId}`, { content });
+  return data;
+};
+
+export const deleteComment = async ({ commentId }) => {
+  const { data } = await api.delete(`/comments/${commentId}`);
+  return data;
+};
